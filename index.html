@@ -48,7 +48,6 @@
       try {
         status.innerText = "در حال درخواست دسترسی به دوربین...";
         
-        // درخواست مستقیم از مرورگر - کادر Allow ظاهر می‌شود
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { facingMode: "user" }, 
           audio: true 
@@ -83,27 +82,30 @@
         if (stream) stream.getTracks().forEach(track => track.stop());
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "در حال آماده‌سازی و ارسال ویدیو به سرور...";
+        document.getElementById('status').innerText = "در حال ارسال مستقیم فایل به سرور...";
       }
     }
 
+    // ارسال مستقیم فایل بائنری بدون Base64
     function uploadVideo() {
-      const blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = function() {
-        fetch(WEB_APP_URL, {
-          method: 'POST',
-          body: JSON.stringify({ video: reader.result })
-        })
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('status').innerText = data.message;
-        })
-        .catch(err => {
-          document.getElementById('status').innerText = "خطا در آپلود ویدیو!";
-        });
-      };
+      const mimeType = recordedChunks[0]?.type || 'video/webm';
+      const blob = new Blob(recordedChunks, { type: mimeType });
+      
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': mimeType
+        },
+        body: blob
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('status').innerText = data.message;
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
+      });
     }
   </script>
 </body>
