@@ -86,27 +86,38 @@
       }
     }
 
-    // ارسال مستقیم فایل بائنری بدون Base64
-    function uploadVideo() {
-      const mimeType = recordedChunks[0]?.type || 'video/webm';
-      const blob = new Blob(recordedChunks, { type: mimeType });
-      
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': mimeType
-        },
-        body: blob
+    // ارسال امن ویدیو بدون برخورد به محدودیت CORS
+function uploadVideo() {
+  const mimeType = recordedChunks[0]?.type || 'video/webm';
+  const blob = new Blob(recordedChunks, { type: mimeType });
+  const reader = new FileReader();
+
+  reader.onloadend = function() {
+    const base64Data = reader.result;
+    
+    // ارسال تحت فرمت text/plain برای دور زدن محدودیت CORS مرورگر
+    fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        video: base64Data,
+        mimeType: mimeType
       })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('status').innerText = data.message;
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
-      });
-    }
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('status').innerText = data.message;
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
+    });
+  };
+
+  reader.readAsDataURL(blob);
+}
   </script>
 </body>
 </html>
