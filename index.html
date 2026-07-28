@@ -14,7 +14,7 @@
     .btn-start { background: #ff5722; color: #fff; }
     .btn-stop { background: #757575; color: #fff; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    #status { margin-top: 15px; font-weight: bold; color: #333; }
+    #status { margin-top: 15px; font-weight: bold; color: #333; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -56,16 +56,26 @@
         document.getElementById('video').srcObject = stream;
 
         let options = { mimeType: 'video/webm' };
-        if (!MediaRecorder.isTypeSupported('video/webm')) {
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
           options = { mimeType: 'video/mp4' };
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+          options = { mimeType: 'video/webm;codecs=vp8' };
         }
 
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
         mediaRecorder.onstop = uploadVideo;
 
-        mediaRecorder.start();
+        // دریافت دیتای ویدیو هر ۱ ثانیه یک‌بار
+        mediaRecorder.start(1000);
+
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
         status.innerText = "🔴 در حال ضبط... متن را بخوانید و سپس دکمه پایان را بزنید.";
@@ -78,46 +88,60 @@
 
     function stopRecording() {
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        if (stream) stream.getTracks().forEach(track => track.stop());
+        document.getElementById('status').innerText = "در حال پردازش ویدیو...";
+        mediaRecorder.stop(); // این کار رویداد onstop را اجرا می‌کند
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "در حال ارسال مستقیم فایل به سرور...";
       }
     }
 
-    // ارسال امن ویدیو بدون برخورد به محدودیت CORS
-function uploadVideo() {
-  const mimeType = recordedChunks[0]?.type || 'video/webm';
-  const blob = new Blob(recordedChunks, { type: mimeType });
-  const reader = new FileReader();
+    function uploadVideo() {
+      // خاموش کردن دوربین پس از اتمام ضبط
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
 
-  reader.onloadend = function() {
-    const base64Data = reader.result;
-    
-    // ارسال تحت فرمت text/plain برای دور زدن محدودیت CORS مرورگر
-    fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify({
-        video: base64Data,
-        mimeType: mimeType
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('status').innerText = data.message;
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
-    });
-  };
+      const mimeType = mediaRecorder.mimeType || 'video/webm';
+      const blob = new Blob(recordedChunks, { type: mimeType });
 
-  reader.readAsDataURL(blob);
-}
+      if (blob.size === 0) {
+        document.getElementById('status').innerText = "❌ خطا: هیچ ویدیویی ضبط نشد! دوباره امتحان کنید.";
+        return;
+      }
+
+      const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+      document.getElementById('status').innerText = `⏳ حجم ویدیو: ${sizeMB} مگابایت. در حال ارسال به سرور...`;
+
+      const reader = new FileReader();
+      reader.onloadend = function() {
+        const base64Data = reader.result;
+        
+        fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            video: base64Data,
+            mimeType: mimeType
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            document.getElementById('status').innerText = data.message;
+          } else {
+            document.getElementById('status').innerText = "خطا: " + data.message;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('status').innerText = "خطا در ارسال ویدیو به سرور!";
+        });
+      };
+
+      reader.readAsDataURL(blob);
+    }
   </script>
 </body>
 </html>
